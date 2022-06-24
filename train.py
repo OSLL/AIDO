@@ -5,7 +5,7 @@ from datetime import datetime
 import torch
 import numpy as np
 from env import DtRewardTargetOrientation, ClipImageWrapper, ResizeWrapper,  MotionBlurWrapper, \
-    NormalizeWrapper, Heading2WheelVelsWrapper, DtRewardPosingLaneWrapper, DtRewardVelocity, DtRewardCollisionAvoidance
+    NormalizeWrapper, Heading2WheelVelsWrapper, DtRewardPosingLaneWrapper, DtRewardVelocity, DtRewardCollisionAvoidance, PIDAction, DtRewardWrapperDAndPhi
 import gym
 from env import Environment
 from PPO import PPO
@@ -25,6 +25,14 @@ env_config = {
 
 
 def warp(env):
+    env = ClipImageWrapper(env, 3)
+    env = ResizeWrapper(env, (64, 64))
+    env = MotionBlurWrapper(env)
+    env = NormalizeWrapper(env)
+    env = DtRewardWrapperDAndPhi(env)  
+    return env
+
+def warp1(env):
     env = ClipImageWrapper(env, 3)
     env = ResizeWrapper(env, (64, 64))
     env = MotionBlurWrapper(env)
@@ -189,7 +197,7 @@ def train():
 
     time_step = 0
     i_episode = 0
-    max = 0
+    max = -np.inf
     # training loop
     while time_step <= max_training_timesteps:
 

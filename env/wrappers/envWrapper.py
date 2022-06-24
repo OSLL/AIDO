@@ -9,8 +9,10 @@ __copyright__ = "Copyright (c) 2020 András Kalapos"
 import gym
 import numpy as np
 import logging
-from gym_duckietown.simulator import Simulator
-
+try:
+    from gym_duckietown.simulator import Simulator
+except:
+    pass
 logger = logging.getLogger(__name__)
 
 

@@ -41,8 +41,9 @@ class ActorCritic(nn.Module):
         self.has_continuous_action_space = has_continuous_action_space
         
         if has_continuous_action_space:
-            self.action_dim = action_dim
-            self.action_var = torch.full((action_dim,), action_std_init * action_std_init).to(device)
+            self.action_dim = 2#action_dim
+            #self.action_var = torch.full((action_dim,), action_std_init * action_std_init).to(device)
+            self.action_var = torch.full((2,), action_std_init * action_std_init).to(device)
         # actor
 
         self.actor = nn.Sequential(
@@ -50,7 +51,7 @@ class ActorCritic(nn.Module):
                         nn.Tanh(),
                         nn.Linear(64, 64),
                         nn.Tanh(),
-                        nn.Linear(64, 1),
+                        nn.Linear(64, 2),
                         )
 
         # critic
@@ -74,12 +75,11 @@ class ActorCritic(nn.Module):
         raise NotImplementedError
     
     def act(self, state):
-        print(state.shape)
         state = state.view(state.size(0), -1)
 
-        print(self.state_dim)
         if self.has_continuous_action_space:
             action_mean = self.actor(state)
+
             cov_mat = torch.diag(self.action_var).unsqueeze(dim=0)
             dist = MultivariateNormal(action_mean, cov_mat)
         else:
@@ -88,7 +88,6 @@ class ActorCritic(nn.Module):
 
         action = dist.sample()
         action_logprob = dist.log_prob(action)
-        
         return action.detach(), action_logprob.detach()
     
     def evaluate(self, state, action):

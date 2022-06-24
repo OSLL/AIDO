@@ -23,9 +23,10 @@ import geometry
 import numpy as np
 import yaml
 import gym
-
-from gym_duckietown.simulator import Simulator, DynamicsInfo
-
+try:
+    from gym_duckietown.simulator import Simulator, DynamicsInfo
+except:
+    pass
 logger = logging.getLogger(__name__)
 
 

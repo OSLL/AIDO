@@ -1,7 +1,8 @@
 import gym
 import numpy as np
 from gym import spaces
-
+from simple_pid import PID
+from lane_control import Controller
 
 class LeftRightBraking2WheelVelsWrapper(gym.ActionWrapper):
     def __init__(self, env):
@@ -45,7 +46,7 @@ class Heading2WheelVelsWrapper(gym.ActionWrapper):
         elif self.heading_type == 'heading_sine':
             action = np.clip([1 - np.sin(action * np.pi), 1 + np.sin(action * np.pi)], 0., 1.)
         elif self.heading_type == 'heading_limited':
-            action = np.clip(np.array([1 + action*0.666666, 1 - action*0.666666]), 0., 1.)
+            action = np.clip(np.array([1 + action * 0.666666, 1 - action * 0.666666]), 0., 1.)
         else:
             action = np.clip(np.array([1 + action, 1 - action]), 0., 1.)  # Full speed single value control
         return action
@@ -59,6 +60,7 @@ class SteeringBraking2WheelVelsWrapper(gym.ActionWrapper):
     Output: action vector:
         wheel velocities
     """
+
     def __init__(self, env, heading_type=None):
         super(SteeringBraking2WheelVelsWrapper, self).__init__(env)
         self.heading_type = heading_type
@@ -86,3 +88,47 @@ class ActionSmoothingWrapper(gym.ActionWrapper):
     def reset(self, **kwargs):
         self.last_action = np.zeros(self.action_space.shape)
         return self.env.reset(**kwargs)
+
+
+class PIDController(gym.ActionWrapper):
+    def __init__(self, env, data=(1, 0.1, 0)):
+        super(PIDController, self).__init__(env)
+        p, i, d = data
+        self.pid = PID(p, i, d)
+        self.pid.output_limits = (-0.636, 0.636)
+        self.pid.sample_time = 0.001
+        self.r = 0.0318
+        self.gain = 1
+        self.base_line = 0.1
+
+    def vel_to_omega(self, action):
+        v1 = action[0][0]
+        v2 = action[1][0]
+        v = (self.r * v1 + self.r * v2) / 2.0
+        omega = (self.r * v1 - self.r * v2) / self.base_line
+        print(f'before {v2, v2}')
+        return [v, omega]
+
+    def omega_to_vel(self, v, omega):
+        v1 = (v + 0.5 * omega * self.base_line) / self.r
+        v2 = (v - 0.5 * omega * self.base_line) / self.r
+        print(f'after {v1, v2}')
+        return [[v1], [v2]]
+
+    def action(self, action):
+        action = self.vel_to_omega(action)
+        omega = self.pid(action[1])
+        print(f'omega {omega}')
+        return self.omega_to_vel(action[0], omega)
+
+class PIDAction(gym.ActionWrapper):
+    def __init__(self, env):
+        super(PIDAction, self).__init__(env)
+        self.controller = Controller()
+
+    def action(self, action):
+        data = self.unwrapped.get_lane_pos2(self.unwrapped.cur_pos, self.unwrapped.cur_angle)
+        #action = self.controller.compute_action((data.dist, data.angle_deg))
+        action = self.controller.compute_action((data.dist, data.angle_rad))
+        return action
+

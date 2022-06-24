@@ -2,13 +2,44 @@ import logging
 import gym
 import gym_duckietown
 import numpy as np
-from gym_duckietown.simulator import NotInLane
+
+try:
+    from gym_duckietown.simulator import NotInLane
+except:
+    pass
 from matplotlib import pyplot as plt
 import seaborn
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.stats import norm
+from lane_control import Controller
 
 logger = logging.getLogger(__name__)
+
+
+class DtRewardWrapperDAndPhi(gym.Wrapper):
+    def __init__(self, env):
+        super(DtRewardWrapperDAndPhi, self).__init__(env)
+        self.controller = Controller()
+
+    def action(self, action):
+        action = self.controller.compute_action((action[0], action[1]))
+        return action
+
+    def reward(self, reward):
+        print(f'd = {self.unwrapped.cur_pos}')
+        print(f'phi = {self.unwrapped.cur_angle}')
+        print(self.unwrapped.get_lane_pos2(self.unwrapped.cur_pos, self.unwrapped.cur_angle))
+        return reward
+
+    def step(self, action):
+        act = action
+        action = self.controller.compute_action((action[0], action[1]))
+        data = self.unwrapped.get_lane_pos2(self.unwrapped.cur_pos, self.unwrapped.cur_angle)
+        print(f'act = {act}, action = {action}')
+        observation, reward, done, info = self.env.step(action)
+        reward = (-abs(abs(data.dist) - abs(act[0])) - abs(abs(data.angle_rad) - abs(act[1])))
+        print(f"action = {action}, reward = {reward}")
+        return observation, reward, done, info
 
 
 class DtRewardWrapperDistanceTravelled(gym.RewardWrapper):
@@ -72,7 +103,7 @@ class DtRewardPosAngle(gym.RewardWrapper):
         self.max_dev_from_target_angle_deg_narrow = 10
         self.max_dev_from_target_angle_deg_wide = 50
         self.target_angle_deg_at_edge = 45
-        self.scale = 1./2.
+        self.scale = 1. / 2.
         self.orientation_reward = 0.
 
     def reward(self, reward):
@@ -112,7 +143,7 @@ class DtRewardPosAngle(gym.RewardWrapper):
         if np.abs(x) < np.pi:
             return np.cos(x)
         else:
-            return -1. - slope * (np.abs(x)-np.pi)
+            return -1. - slope * (np.abs(x) - np.pi)
 
     @staticmethod
     def gaussian(x, mu=0., sig=1.):
@@ -182,7 +213,7 @@ class DtRewardPosAngle(gym.RewardWrapper):
 
         fig = plt.figure()
         ax = fig.gca(projection='3d')
-        surf = ax.plot_surface(vpos, vang, reward, antialiased=False,)
+        surf = ax.plot_surface(vpos, vang, reward, antialiased=False, )
         fig.colorbar(surf, shrink=0.5, aspect=5)
         plt.show()
 
@@ -293,8 +324,8 @@ class DtRewardProximityPenalty(gym.RewardWrapper):
             info['custom_rewards'] = {}
         info['custom_rewards']['collision_avoidance'] = self.proximity_reward
         return observation, self.reward(reward), done, info
-    
-    
+
+
 class DtRewardPosingLaneWrapper(gym.RewardWrapper):
     def __init__(self, env):
         if env is not None:
@@ -307,10 +338,9 @@ class DtRewardPosingLaneWrapper(gym.RewardWrapper):
         try:
             lp = self.unwrapped.get_lane_pos2(pos, self.unwrapped.cur_angle)
             if lp.dist < self.offset:
-                reward = reward + (lp.dist-self.offset)*1.5
+                reward = reward + (lp.dist - self.offset) * 1.5
             elif lp.dist > self.offset_max:
-                reward = reward - (lp.dist-self.offset_max)*2
+                reward = reward - (lp.dist - self.offset_max) * 2
         except Exception:
             pass
         return reward
-

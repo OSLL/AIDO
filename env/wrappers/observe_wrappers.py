@@ -3,7 +3,10 @@ import cv2
 from gym import spaces
 import numpy as np
 import logging
-from gym_duckietown.simulator import CAMERA_FOV_Y
+try:
+    from gym_duckietown.simulator import CAMERA_FOV_Y
+except:
+    pass
 import os
 
 logger = logging.getLogger(__name__)
