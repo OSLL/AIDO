@@ -18,7 +18,7 @@ from .wrappers.general_wrappers import InconvenientSpawnFixingWrapper, DummyDuck
 from .wrappers.observe_wrappers import ResizeWrapper, NormalizeWrapper, ClipImageWrapper, MotionBlurWrapper, RandomFrameRepeatingWrapper, ObservationBufferWrapper, RGB2GrayscaleWrapper, LastPictureObsWrapper, ReshapeWrapper
 from .wrappers.reward_wrappers import DtRewardTargetOrientation, DtRewardVelocity, DtRewardCollisionAvoidance, DtRewardPosingLaneWrapper, DtRewardPosAngle
 from .wrappers.action_wpappers import Heading2WheelVelsWrapper, ActionSmoothingWrapper
-from .wrappers.envWrapper import ActionDelayWrapper, ForwardObstacleSpawnnigWrapper, ObstacleSpawningWrapper
+from .wrappers.envWrapper import ActionDelayWrapper, ForwardObstacleSpawnnigWrapper, ObstacleSpawningWrapper, BatchWrapper
 
 
 class Environment:
@@ -26,9 +26,30 @@ class Environment:
         self._env = None
         np.random.seed(seed)
         random.seed(seed)
+        self.default = {
+            "seed": random.randint(0, 100000),
+            "map_name": "ETU_autolab_track",
+            "max_steps": 5000,
+            "camera_width": 640,
+            "camera_height": 480,
+            "accept_start_angle_deg": 40,
+            "full_transparency": True,
+            "distortion": True,
+            "domain_rand": False
+        }
 
-    def create_env(self, env_config, wrap):
+    def create_env(self, default=True, map=None, env_config=None, wrap=None):
         self._env = None
+        if default:
+            if map is None:
+                env_config = self.default
+            else:
+                env_config = self.default
+                env_config["map_name"] = map
+            wrap = self.default_warp
+        print(default)
+        print(env_config)
+
         try:
             self._env = Simulator(
                 seed=env_config["seed"],
@@ -48,3 +69,13 @@ class Environment:
     def wrap(self, env_config, warp):
         env = DummyDuckietownGymLikeEnv()
         return warp(env)
+
+    def default_warp(self, env):
+        print(type(env))
+        env = ClipImageWrapper(env, 3)
+        env = ResizeWrapper(env, (64, 64))
+        env = MotionBlurWrapper(env)
+        env = NormalizeWrapper(env)
+        env = BatchWrapper(env)
+        return env
+

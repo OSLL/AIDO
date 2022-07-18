@@ -127,8 +127,9 @@ class PIDAction(gym.ActionWrapper):
         self.controller = Controller()
 
     def action(self, action):
-        data = self.unwrapped.get_lane_pos2(self.unwrapped.cur_pos, self.unwrapped.cur_angle)
+        #print(2)
+        #data = self.unwrapped.get_lane_pos2(self.unwrapped.cur_pos, self.unwrapped.cur_angle)
         #action = self.controller.compute_action((data.dist, data.angle_deg))
-        action = self.controller.compute_action((data.dist, data.angle_rad))
+        action = self.controller.compute_action((action[0], action[1]))
         return action
 

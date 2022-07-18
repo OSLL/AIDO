@@ -6,9 +6,12 @@ Most of these were implemented for Gym-Duckietown version 5.0.16
 __license__ = "MIT"
 __copyright__ = "Copyright (c) 2020 András Kalapos"
 
+import _io
+
 import gym
 import numpy as np
 import logging
+from PIL import Image
 try:
     from gym_duckietown.simulator import Simulator
 except:
@@ -117,18 +120,18 @@ class ActionDelayWrapper(gym.Wrapper):
 
     def __init__(self, env):
         super(ActionDelayWrapper, self).__init__(env)
-        #self.env_config = env_config
+        # self.env_config = env_config
         self.simulator = self.unwrapped  # type: Simulator
-        #assert isinstance(self.simulator, Simulator), "Env must be gym_duckietown.simulator.Simulator"
+        # assert isinstance(self.simulator, Simulator), "Env must be gym_duckietown.simulator.Simulator"
 
-        #if env_config.get('action_delay_ratio', 0.) == "random":
+        # if env_config.get('action_delay_ratio', 0.) == "random":
         self.random_ratio = True
         self.ratio_distribution_range = (0.9, 0.95)
         self.action_delay_ratio = np.random.uniform(*self.ratio_distribution_range)
-        #else:
-            #self.random_ratio = False
-            #self.action_delay_ratio = env_config.get('action_delay_ratio', 0.)
-        #assert self.action_delay_ratio > 0.0 and self.action_delay_ratio < 1.0, "action_delay_ratio must be in the (0, 1) interval"
+        # else:
+        # self.random_ratio = False
+        # self.action_delay_ratio = env_config.get('action_delay_ratio', 0.)
+        # assert self.action_delay_ratio > 0.0 and self.action_delay_ratio < 1.0, "action_delay_ratio must be in the (0, 1) interval"
         self.last_action = np.zeros(self.action_space.shape)
 
     def step(self, action):
@@ -137,16 +140,16 @@ class ActionDelayWrapper(gym.Wrapper):
         for _ in range(self.simulator.frame_skip):
             # Passing delta time to update physics is not enough, _update_pos() uses the member variable delta_time
             self.simulator.delta_time = delta_time * self.action_delay_ratio
-            
+
             try:
                 self.simulator.update_physics(action=self.last_action, delta_time=None)
                 self.simulator.step_count -= 1
             except:
                 pass
-            
+
             # Update physics increments step count but that should ony be incremented once for each step
             # This will happen when self.env.step() is called
-            
+
         self.last_action = action
         self.simulator.delta_time = delta_time * (1. - self.action_delay_ratio)
         return self.env.step(action)
@@ -170,6 +173,7 @@ class InconvenientSpawnFixingWrapper(gym.Wrapper):
         ``gym_duckietown.simulator.Simulator.reset()`` is called in ``gym_duckietown.simulator.Simulator.__init__(...)``.
         **Simulator instantiation should also be wrapped in a similar while loop!!!**
     """
+
     def reset(self, **kwargs):
         spawn_successful = False
         spawn_attempts = 1
@@ -178,7 +182,7 @@ class InconvenientSpawnFixingWrapper(gym.Wrapper):
                 ret = self.env.reset(**kwargs)
                 spawn_successful = True
             except Exception as e:
-                self.unwrapped.seed_value += 1   # Otherwise it selects the same tile in the next attempt
+                self.unwrapped.seed_value += 1  # Otherwise it selects the same tile in the next attempt
                 self.unwrapped.seed(self.unwrapped.seed_value)
                 logger.error("{}; Retrying with new seed: {}".format(e, self.unwrapped.seed_value))
                 spawn_attempts += 1
@@ -207,13 +211,14 @@ class ObstacleSpawningWrapper(gym.Wrapper):
     def __init__(self, env):
         super(ObstacleSpawningWrapper, self).__init__(env)
         self.simulator = env.unwrapped  # type: Simulator
-        self.env_config = {'spawn_obstacles': True,'obstacles':{'duckie':{'density': 0.2, 'static': True},'duckiebot':{'density': 0,'static': False},},}
+        self.env_config = {'spawn_obstacles': True, 'obstacles': {'duckie': {'density': 0.2, 'static': True},
+                                                                  'duckiebot': {'density': 0, 'static': False}, }, }
         if self.env_config.get('spawn_obstacles', False):
             self.safe_spawn_objects()
 
     def reset(self, **kwargs):
-        #if self.env_config.get('spawn_obstacles', False):
-            #self.safe_spawn_objects()
+        # if self.env_config.get('spawn_obstacles', False):
+        # self.safe_spawn_objects()
         return self.env.reset(**kwargs)
 
     def safe_spawn_objects(self):
@@ -230,7 +235,7 @@ class ObstacleSpawningWrapper(gym.Wrapper):
         drivable_tiles = self.simulator.drivable_tiles
         # Get total obstacle count
         obstacle_cnt = 0
-        for kind, descriptor in self.env_config.get('obstacles',{}).items():
+        for kind, descriptor in self.env_config.get('obstacles', {}).items():
             obstacle_cnt += int(descriptor.get('density', 0) * len(drivable_tiles))
 
         # more than 1 object on a single tile is not allowed, because it can easily create unavoidable obstacles.
@@ -269,7 +274,7 @@ class ObstacleSpawningWrapper(gym.Wrapper):
             if obstacle_idx >= len(tiles):
                 break
         self.simulator._load_objects({'objects': obstacles})
-        #self.simulator.collidable_corners = np.zeros_like(self.simulator.collidable_corners) #BUGFIX in the simulator...
+        # self.simulator.collidable_corners = np.zeros_like(self.simulator.collidable_corners) #BUGFIX in the simulator...
 
     def _sample_tiles(self, drivable_tiles, size):
         """ Returns a list of simulator tiles, which are selected randomly without replacement.
@@ -286,14 +291,15 @@ class ForwardObstacleSpawnnigWrapper(gym.Wrapper):
                               'cone': 0.08,
                               'barrier': 0.08}
 
-                              
     def __init__(self, env):
-        
-        self.env_config = {'spawn_obstacles': True,'obstacles':{'duckie':{'density': 0, 'static': True},'duckiebot':{'density': 0.2,'static': False},},'spawn_forward_obstacle': True}
+
+        self.env_config = {'spawn_obstacles': True, 'obstacles': {'duckie': {'density': 0, 'static': True},
+                                                                  'duckiebot': {'density': 0.2, 'static': False}, },
+                           'spawn_forward_obstacle': True}
         super(ForwardObstacleSpawnnigWrapper, self).__init__(env)
         self.simulator = env.unwrapped
         self.lateral_pos_perturb_half_width = 0.2 * self.simulator.road_tile_size
-        self.orientation_perturb_half_width = np.pi/4
+        self.orientation_perturb_half_width = np.pi / 4
         if self.env_config.get('spawn_forward_obstacle', False):
             self.safe_spawn_objects()
 
@@ -310,7 +316,8 @@ class ForwardObstacleSpawnnigWrapper(gym.Wrapper):
         reset_good = False
         while not reset_good:
             ret = self.env.reset(**kwargs)
-            curve_point, curve_tangent = self.simulator.closest_curve_point(self.simulator.cur_pos, self.simulator.cur_angle)
+            curve_point, curve_tangent = self.simulator.closest_curve_point(self.simulator.cur_pos,
+                                                                            self.simulator.cur_angle)
             if curve_point is not None and curve_tangent is not None:
                 reset_good = True
             else:
@@ -325,7 +332,7 @@ class ForwardObstacleSpawnnigWrapper(gym.Wrapper):
         # obj_pose_valid = False
         # while not obj_pose_valid:
         # Get a random point in front of the vehicle
-        forward_dist = tile_size * (2. + 2*np.random.random())
+        forward_dist = tile_size * (2. + 2 * np.random.random())
         obj_pos, obj_pos_tangent = self.get_point_on_curve_ahead(forward_dist, self.simulator)
         # Randomise the lateral posotion of the obstacle
         right_normal_to_curve = np.array([obj_pos_tangent[2], 0, -obj_pos_tangent[0]])
@@ -393,3 +400,71 @@ class ForwardObstacleSpawnnigWrapper(gym.Wrapper):
         if angle < 0:
             angle += 2 * np.pi
         return angle
+
+
+class DatasetWrapper(gym.Wrapper):
+    def __init__(self, env, file: _io.TextIOWrapper, directory: str):
+        super(DatasetWrapper, self).__init__(env)
+        self._file = file
+        self._directory = directory
+        self._i = 0
+
+    def _write_in_file(self, obs: np.array):
+        data = None
+        try:
+            data = self.unwrapped.get_lane_pos2(self.unwrapped.cur_pos, self.unwrapped.cur_angle)
+        except:
+            pass
+        if data is not None:
+            print(obs)
+            print(obs.shape)
+            self._file.write('{} {} {}\n'.format(self._i, data.dist, data.angle_rad))
+            img = Image.fromarray((obs * 255).astype(np.uint8))
+            img.save('{}/{}.png'.format(self._directory, self._i))
+            self._i += 1
+
+    def step(self, action):
+        observation, reward, done, info = self.env.step(action)
+        self._write_in_file(observation)
+        return observation, reward, done, info
+
+
+class BatchWrapper(gym.Wrapper):
+    def __init__(self, env):
+        super(BatchWrapper, self).__init__(env)
+
+
+    def _write_in_file(self, obs: np.array):
+        data = None
+        try:
+            data = self.unwrapped.get_lane_pos2(self.unwrapped.cur_pos, self.unwrapped.cur_angle)
+        except:
+            pass
+        if data is not None:
+            print(obs)
+            print(obs.shape)
+            self._file.write('{} {} {}\n'.format(self._i, data.dist, data.angle_rad))
+            img = Image.fromarray((obs * 255).astype(np.uint8))
+            img.save('{}/{}.png'.format(self._directory, self._i))
+            self._i += 1
+
+    def step(self, action):
+        data = None
+        try:
+            data = self.unwrapped.get_lane_pos2(self.unwrapped.cur_pos, self.unwrapped.cur_angle)
+        except:
+            pass
+        if data is not None:
+            observation, reward, done, info = self.env.step(action)
+            info['dist'] = data.dist
+            info['rad'] = data.angle_rad
+            info['successfully'] = True
+            return observation, reward, done, info
+        else:
+            self.reset()
+            observation, reward, done, info = self.env.step(action)
+            info['successfully'] = False
+            return observation, reward, done, info
+
+
+

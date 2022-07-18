@@ -46,8 +46,8 @@ class PID:
 
         v = self.compute_velocity(stop_line_distance)
 
-        v1 = ((v + 0.5 * omega * self.base_line) / self.r)/27
-        v2 = ((v - 0.5 * omega * self.base_line) / self.r)/27
+        v1 = ((v + 0.5 * omega * self.base_line) / self.r)/15
+        v2 = ((v - 0.5 * omega * self.base_line) / self.r)/15
         u_r_limited = max(min(v1, self.limit), -self.limit)
         u_l_limited = max(min(v2, self.limit), -self.limit)
         return np.array([u_r_limited, u_l_limited])

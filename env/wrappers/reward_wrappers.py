@@ -33,13 +33,20 @@ class DtRewardWrapperDAndPhi(gym.Wrapper):
 
     def step(self, action):
         act = action
-        action = self.controller.compute_action((action[0], action[1]))
-        data = self.unwrapped.get_lane_pos2(self.unwrapped.cur_pos, self.unwrapped.cur_angle)
-        print(f'act = {act}, action = {action}')
+        compute_reward = True
+        data = None
+        try:
+            data = self.unwrapped.get_lane_pos2(self.unwrapped.cur_pos, self.unwrapped.cur_angle)
+        except:
+            compute_reward = False
+        rew = -1
+        if data != None:
+            action = self.controller.compute_action((data.dist, action[0]))
+            rew = -abs(abs(act[0]) - abs(data.angle_rad))
+        else:
+            action = [1, 1]
         observation, reward, done, info = self.env.step(action)
-        reward = (-abs(abs(data.dist) - abs(act[0])) - abs(abs(data.angle_rad) - abs(act[1])))
-        print(f"action = {action}, reward = {reward}")
-        return observation, reward, done, info
+        return observation, rew, done, info
 
 
 class DtRewardWrapperDistanceTravelled(gym.RewardWrapper):
