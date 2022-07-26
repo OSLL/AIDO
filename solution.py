@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 import os
 from typing import Optional
-
+from learning import ParamsNet
 import numpy as np
-
+from lane_control import Controller
 
 from aido_schemas import EpisodeStart, protocol_agent_DB20, PWMCommands, DB20Commands, LEDSCommands, RGB, \
     wrap_direct, Context, DB20Observations, JPGImage, logger
 
-from env import Environment, ClipImageWrapper, ResizeWrapper, MotionBlurWrapper, NormalizeWrapper, get_wrappers
+from env import Environment, ClipImageWrapper, ResizeWrapper, NormalizeWrapper, get_wrappers
 from PIL import Image
-from test import test
+
 import io
 import random
 
@@ -41,6 +41,7 @@ class PytorchRLTemplateAgent:
         self.i = 0
         self.load_model = load_model
         self.model_path = model_path
+        self.controller = Controller()
 
         ### action parts ###
         self.last_action = np.array([0.])
@@ -49,7 +50,8 @@ class PytorchRLTemplateAgent:
     def init(self, context: Context):
         self.check_gpu_available(context)
         logger.info('PytorchRLTemplateAgent init')
-        self.model = test()
+        self.model = ParamsNet()
+        self.model.load('./model/90000')
         self.env = Environment(123345).wrap(env_config, warp)
         self.obs_wrappers, _, _ = get_wrappers(self.env)
         self.current_image = np.zeros((640, 480, 3))
@@ -100,23 +102,11 @@ class PytorchRLTemplateAgent:
 
     def compute_action(self, observation):
         self.i += 1
-        obs = np.array([observation])
-        print(obs.shape)
-        action = np.array([self.model.select_action(obs)[0]])
-        print(action)
-        if self.i > 70:
-            smooth_action = (1. - self.new_action_ratio) * self.last_action + self.new_action_ratio * action
-            self.last_action = action
-            action = np.clip(np.array([1 + smooth_action, 1 - smooth_action]), 0., 1.)
-        else:
-            action = np.clip(np.array([1 + action, 1 - action]), 0., 1.)
-        print(action)
 
-        return action*0.3
-        #action = LeftRightBraking2WheelVelsWrapper.action(action)
-        #action = np.clip(np.array([1 + action, 1 - action]), 0., 1.)
-        #return action
-        #*0.8#np.array(action)
+        val = self.model.forward(observation)
+        action = [val[0][0].item(), val[0][1].item()]
+        return self.controller.compute_action((action[0], action[1]))
+
 
     def on_received_get_commands(self, context: Context):
         # self.action_counter

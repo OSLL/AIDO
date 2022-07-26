@@ -1,5 +1,4 @@
 #from learning import Dataset
-from learning import ParamsNet
 from learning import Trainer
 
 

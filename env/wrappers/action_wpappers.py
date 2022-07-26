@@ -1,7 +1,7 @@
 import gym
 import numpy as np
 from gym import spaces
-from simple_pid import PID
+
 from lane_control import Controller
 
 class LeftRightBraking2WheelVelsWrapper(gym.ActionWrapper):
@@ -90,7 +90,7 @@ class ActionSmoothingWrapper(gym.ActionWrapper):
         return self.env.reset(**kwargs)
 
 
-class PIDController(gym.ActionWrapper):
+'''class PIDController(gym.ActionWrapper):
     def __init__(self, env, data=(1, 0.1, 0)):
         super(PIDController, self).__init__(env)
         p, i, d = data
@@ -120,7 +120,7 @@ class PIDController(gym.ActionWrapper):
         omega = self.pid(action[1])
         print(f'omega {omega}')
         return self.omega_to_vel(action[0], omega)
-
+'''
 class PIDAction(gym.ActionWrapper):
     def __init__(self, env):
         super(PIDAction, self).__init__(env)

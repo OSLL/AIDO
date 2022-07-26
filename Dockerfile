@@ -19,18 +19,10 @@ FROM light5551/fast-build:daffy-amd64
 #RUN pip3 uninstall dataclasses -y
 # let's copy all our solution files to our workspace
 
-RUN pip3 install -U simple_pid
 WORKDIR /submission
-COPY solution.py ./
-COPY PPO_preTrained/Duckietown/PPO_Duckietown_0_0_611.pth /submission/PPO_preTrained/Duckietown/PPO_Duckietown_0_0_611.pth
-#COPY model.py ./
+COPY lane_control /submission/lane_control
 COPY env /submission/env
+COPY learning /submission/learning
+COPY solution.py ./
 
-
-COPY ./PPO.py ./
-COPY ./test.py ./
-
-
-
-
-CMD ["python3", "solution.py"]
+CMD ["python3", "./solution.py"]

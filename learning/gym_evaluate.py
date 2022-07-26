@@ -1,15 +1,13 @@
-import pyglet
 import torch
-from pyglet.window import key
 from ParamsNet import ParamsNet
+from pyglet.window import key
 import random
 from env import Environment, ClipImageWrapper, ResizeWrapper, MotionBlurWrapper, NormalizeWrapper, PIDAction
-import numpy as np
 
 env_config = {
     "seed": random.randint(0, 100000),
-    "map_name": "loop_empty",
-    "max_steps": 5000,
+    "map_name": "ETU_autolab_track",
+    "max_steps": 1000,
     "camera_width": 640,
     "camera_height": 480,
     "accept_start_angle_deg": 40,
@@ -28,9 +26,9 @@ def warp(env):
     return env
 
 if __name__ == '__main__':
-    env = Environment(12345).create_env(False, env_config, warp)
+    env = Environment(12345).create_env(False, None, env_config, warp)
     model = ParamsNet()
-    model.load('./model/9250')
+    model.load('./model/90000')
     model.eval()
     with torch.no_grad():
         env.reset()

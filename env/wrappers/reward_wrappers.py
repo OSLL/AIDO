@@ -1,6 +1,5 @@
 import logging
 import gym
-import gym_duckietown
 import numpy as np
 
 try:
@@ -9,8 +8,6 @@ except:
     pass
 from matplotlib import pyplot as plt
 import seaborn
-from mpl_toolkits.mplot3d import Axes3D
-from scipy.stats import norm
 from lane_control import Controller
 
 logger = logging.getLogger(__name__)

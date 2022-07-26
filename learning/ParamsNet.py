@@ -12,7 +12,10 @@ class ParamsNet(nn.Module):
         self.fc4 = nn.Linear(16 * 16, 4*4)
         self.fc5 = nn.Linear(4*4, 2)
         self.relu = nn.ReLU()
-        self.device = torch.device('cuda:0')
+        if torch.cuda.is_available():
+            self.device = torch.device('cuda:0')
+        else:
+            self.device = torch.device('cpu')
         torch.cuda.set_device(self.device)
         self.to(self.device)
         self.eval()
