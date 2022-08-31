@@ -1,6 +1,3 @@
-import os
-import shutil
-import glob
 import time
 
 try:
@@ -8,25 +5,16 @@ try:
 except Exception:
     pass
 
-from datetime import datetime
-import csv
-import torch
 import numpy as np
 
-import gym
-
-
-from PPO import PPO
-from env import DtRewardTargetOrientation, ClipImageWrapper, ResizeWrapper, MotionBlurWrapper, PIDController, \
-    NormalizeWrapper, Heading2WheelVelsWrapper, DtRewardPosingLaneWrapper, DtRewardVelocity, DtRewardCollisionAvoidance, PIDAction, DtRewardWrapperDAndPhi
-import gym
+from env import ClipImageWrapper, ResizeWrapper, MotionBlurWrapper, NormalizeWrapper, PIDAction, DtRewardWrapperDAndPhi
 from env import Environment
 from PPO import PPO
 import random
 
 env_config = {
     "seed": random.randint(0, 100000),
-    "map_name": "loop_empty",
+    "map_name": "ETU_autolab_track",
     "max_steps": 5000,
     "camera_width": 640,
     "camera_height": 480,
@@ -41,7 +29,7 @@ def warp1(env):
     env = ResizeWrapper(env, (64, 64))
     env = MotionBlurWrapper(env)
     env = NormalizeWrapper(env)
-    #env = PIDAction(env)
+    env = PIDAction(env)
     env = DtRewardWrapperDAndPhi(env)
     return env
 
@@ -125,7 +113,7 @@ def test(evaluate=False):
     run_num_pretrained = 0  #### set this to load a particular checkpoint num
 
     directory = "PPO_preTrained" + '/' + env_name + '/'
-    checkpoint_path = directory + "PPO_{}_{}_{}_{}.pth".format(env_name, random_seed, run_num_pretrained, -32)
+    checkpoint_path = directory + "PPO_{}_{}_{}_{}.pth".format(env_name, random_seed, run_num_pretrained, -320)
     print("loading network from : " + checkpoint_path)
 
     ppo_agent.load(checkpoint_path)
@@ -142,6 +130,7 @@ def test(evaluate=False):
                 state = np.array([state])
                 action = ppo_agent.select_action(state)
                 print(action)
+                print("step")
                 state, reward, done, _ = env.step(action)
                 ep_reward += reward
 

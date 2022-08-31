@@ -4,3 +4,5 @@ __pycache__
 *.csv
 PPO_logs
 PPO_preTrained
+*phi*
+*model*

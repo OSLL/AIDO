@@ -1,19 +1,17 @@
 import os
-import glob
-import time
 from datetime import datetime
 import torch
 import numpy as np
 from env import DtRewardTargetOrientation, ClipImageWrapper, ResizeWrapper,  MotionBlurWrapper, \
-    NormalizeWrapper, Heading2WheelVelsWrapper, DtRewardPosingLaneWrapper, DtRewardVelocity, DtRewardCollisionAvoidance, PIDAction, DtRewardWrapperDAndPhi
-import gym
+    NormalizeWrapper, Heading2WheelVelsWrapper, DtRewardPosingLaneWrapper, DtRewardVelocity, DtRewardCollisionAvoidance, \
+    DtRewardWrapperDAndPhi
 from env import Environment
 from PPO import PPO
 import random
 
 env_config = {
     "seed": random.randint(0, 100000),
-    "map_name": "loop_empty",
+    "map_name": "ETU_autolab_track",
     "max_steps": 5000,
     "camera_width": 640,
     "camera_height": 480,

@@ -4,13 +4,13 @@ import numpy as np
 
 
 class ParamsNet(nn.Module):
-    def __init__(self):
+    def __init__(self, out=1):
         super(ParamsNet, self).__init__()
         self.fc1 = nn.Linear(64*64*3, 64*64)
         self.fc2 = nn.Linear(64*64, 32*32)
         self.fc3 = nn.Linear(32 * 32, 16 * 16)
         self.fc4 = nn.Linear(16 * 16, 4*4)
-        self.fc5 = nn.Linear(4*4, 2)
+        self.fc5 = nn.Linear(4*4, out)
         self.relu = nn.ReLU()
         if torch.cuda.is_available():
             self.device = torch.device('cuda:0')

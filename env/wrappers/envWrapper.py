@@ -12,6 +12,7 @@ import gym
 import numpy as np
 import logging
 from PIL import Image
+from lane_control import Controller
 try:
     from gym_duckietown.simulator import Simulator
 except:
@@ -432,7 +433,7 @@ class DatasetWrapper(gym.Wrapper):
 class BatchWrapper(gym.Wrapper):
     def __init__(self, env):
         super(BatchWrapper, self).__init__(env)
-
+        self.controller = Controller()
 
     def _write_in_file(self, obs: np.array):
         data = None

@@ -128,8 +128,30 @@ class PIDAction(gym.ActionWrapper):
 
     def action(self, action):
         #print(2)
-        #data = self.unwrapped.get_lane_pos2(self.unwrapped.cur_pos, self.unwrapped.cur_angle)
-        #action = self.controller.compute_action((data.dist, data.angle_deg))
+        data = self.unwrapped.get_lane_pos2(self.unwrapped.cur_pos, self.unwrapped.cur_angle)
+        #print(f'sym {data.dist, data.angle_deg}')
+        #print(f'action {action}')
+        #print(f'dist {(action[0]-data.dist)**2}')
+
+        print(f' dist data {action[0], data.dist}')
+        print(f'angle data {action[1], data.angle_rad}')
+        dist_err = np.abs(action[0] -data.dist)/np.abs(data.dist)*100
+        print(f'dist {dist_err}')
+        angle_err = np.abs(action[1] -data.angle_rad)/np.abs(data.angle_rad)*100
+        print(f'angle {angle_err}')
+        #data = self.controller.compute_action((data.dist, data.angle_deg))
         action = self.controller.compute_action((action[0], action[1]))
+        return action
+
+
+class DandPhiWrapper(gym.ActionWrapper):
+    def __init__(self, env):
+        super(DandPhiWrapper, self).__init__(env)
+        self.controller = Controller()
+
+    def action(self, action):
+
+        data = self.unwrapped.get_lane_pos2(self.unwrapped.cur_pos, self.unwrapped.cur_angle)
+        action = self.controller.compute_action((data.dist, data.angle_rad))
         return action
 

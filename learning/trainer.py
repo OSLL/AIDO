@@ -4,11 +4,12 @@ import torch
 
 
 class Trainer:
-    def __init__(self, name, size):
-        self.net = ParamsNet()
+    def __init__(self, name, size, out=1):
+        self.net = ParamsNet(out=out)
+        self.out = out
         self.directory = name
         self.batch = Batch(size, name)
-        self.adam = torch.optim.Adam(self.net.parameters(), lr=0.0001)
+        self.adam = torch.optim.Adam(self.net.parameters(), lr=0.001)
         self.device = torch.device('cuda:0')
         self.log_f = open(f'./{self.directory}.csv', "w+")
         self.loss_f = torch.nn.MSELoss
@@ -19,6 +20,10 @@ class Trainer:
         L2 = L2_1 + L2_2
         return L2.mean()
 
+    def loss_one(self, pred, train):
+        print(f'pred = {pred, train}')
+        return (pred - train)**2
+
     def train(self, epoch):
         for i in range(epoch):
             print(f'epoch = {i}')
@@ -26,7 +31,6 @@ class Trainer:
             data, train = self.batch.create_batch()
             train = torch.from_numpy(train).to(self.device)
             prediction = self.net.forward(data)
-            print(prediction)
             loss = self.loss(prediction, train)
             loss.backward()
             self.adam.step()

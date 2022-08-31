@@ -6,20 +6,14 @@ This script allows you to manually control the simulator or Duckiebot
 using the keyboard arrows.
 """
 from PIL import Image
-import argparse
 import sys
 
-import gym
 import numpy as np
 import pyglet
 from pyglet.window import key
 
-from PPO import PPO
-from env import DtRewardTargetOrientation, ClipImageWrapper, ResizeWrapper, MotionBlurWrapper, PIDController, \
-    NormalizeWrapper, Heading2WheelVelsWrapper, DtRewardPosingLaneWrapper, DtRewardVelocity, DtRewardCollisionAvoidance, DtRewardWrapperDAndPhi, PIDAction
-import gym
+from env import DandPhiWrapper, Heading2WheelVelsWrapper
 from env import Environment
-from PPO import PPO
 import random
 
 env_config = {
@@ -36,14 +30,13 @@ env_config = {
 
 
 def warp(env):
-    #env = DtRewardWrapperDAndPhi(env)
-    env = DtRewardTargetOrientation(env)
-    env = DtRewardCollisionAvoidance(env)
-    env = DtRewardPosingLaneWrapper(env)
-    env = PIDAction(env)
+    #env = Heading2WheelVelsWrapper(env)
+    env = DandPhiWrapper(env)
+
+
     return env
 
-env = Environment(123456).create_env(env_config, warp)
+env = Environment(123456).create_env(default= False, env_config=env_config, wrap=warp)
 # from experiments.utils import save_img
 
 
@@ -131,10 +124,10 @@ def update(dt):
 
         im.save("screen.png")
 
-    if done:
-        print("done!")
-        env.reset()
-        env.render()
+    #if done:
+    #    print("done!")
+    #    env.reset()
+    #    env.render()
 
     env.render()
 

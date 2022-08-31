@@ -46,7 +46,8 @@ class Environment:
             else:
                 env_config = self.default
                 env_config["map_name"] = map
-            wrap = self.default_warp
+            if wrap is None:
+                wrap = self.default_warp
         print(default)
         print(env_config)
 

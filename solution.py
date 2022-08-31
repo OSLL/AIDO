@@ -50,8 +50,8 @@ class PytorchRLTemplateAgent:
     def init(self, context: Context):
         self.check_gpu_available(context)
         logger.info('PytorchRLTemplateAgent init')
-        self.model = ParamsNet()
-        self.model.load('./model/90000')
+        self.model = ParamsNet(out=2)
+        self.model.load('./learning/model/90000')
         self.env = Environment(123345).wrap(env_config, warp)
         self.obs_wrappers, _, _ = get_wrappers(self.env)
         self.current_image = np.zeros((640, 480, 3))

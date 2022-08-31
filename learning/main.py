@@ -3,6 +3,6 @@ from learning import Trainer
 
 
 if __name__ == "__main__":
-    trainer = Trainer('model', 32)
-    trainer.train(1000000)
+    trainer = Trainer('model_with_real', 128, 2)
+    trainer.train(300000)
     #trainer.evaluate('epoch_epoch_650')
