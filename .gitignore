@@ -5,7 +5,6 @@ __pycache__
 PPO_logs
 PPO_preTrained
 *phi*
-*model*
 *.log
 *.png
 *.pkl
