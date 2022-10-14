@@ -435,20 +435,6 @@ class BatchWrapper(gym.Wrapper):
         super(BatchWrapper, self).__init__(env)
         self.controller = Controller()
 
-    def _write_in_file(self, obs: np.array):
-        data = None
-        try:
-            data = self.unwrapped.get_lane_pos2(self.unwrapped.cur_pos, self.unwrapped.cur_angle)
-        except:
-            pass
-        if data is not None:
-            print(obs)
-            print(obs.shape)
-            self._file.write('{} {} {}\n'.format(self._i, data.dist, data.angle_rad))
-            img = Image.fromarray((obs * 255).astype(np.uint8))
-            img.save('{}/{}.png'.format(self._directory, self._i))
-            self._i += 1
-
     def step(self, action):
         data = None
         try:

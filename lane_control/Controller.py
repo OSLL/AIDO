@@ -13,7 +13,7 @@ class Controller:
             "~k_Iphi": 0.0,
             "~theta_thres": 0.523,
             "~d_thres": 0.2615,
-            "~d_offset": 0.0,
+            "~d_offset": 0.005,
             "~omega_ff": 0,
             "~integral_bounds": {
                 "d": {

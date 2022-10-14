@@ -9,7 +9,5 @@ PyYAML
 matplotlib
 scipy
 seaborn
-simple_pid
-numba
 pyglet
 Pillow

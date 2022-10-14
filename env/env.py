@@ -4,9 +4,6 @@ try:
     pyglet.window.Window()
 except Exception:
     pass
-
-import logging
-import sys
 import random
 import numpy as np
 try:
@@ -15,10 +12,8 @@ try:
 except:
     pass
 from .wrappers.general_wrappers import InconvenientSpawnFixingWrapper, DummyDuckietownGymLikeEnv
-from .wrappers.observe_wrappers import ResizeWrapper, NormalizeWrapper, ClipImageWrapper, MotionBlurWrapper, RandomFrameRepeatingWrapper, ObservationBufferWrapper, RGB2GrayscaleWrapper, LastPictureObsWrapper, ReshapeWrapper
-from .wrappers.reward_wrappers import DtRewardTargetOrientation, DtRewardVelocity, DtRewardCollisionAvoidance, DtRewardPosingLaneWrapper, DtRewardPosAngle
-from .wrappers.action_wpappers import Heading2WheelVelsWrapper, ActionSmoothingWrapper
-from .wrappers.envWrapper import ActionDelayWrapper, ForwardObstacleSpawnnigWrapper, ObstacleSpawningWrapper, BatchWrapper
+from .wrappers.observe_wrappers import ResizeWrapper, NormalizeWrapper, ClipImageWrapper, MotionBlurWrapper
+from .wrappers.envWrapper import BatchWrapper
 
 
 class Environment:

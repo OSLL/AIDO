@@ -1,75 +1,88 @@
-from learning import Batch
+from learning import BatchGenerator
 from learning import ParamsNet
 import torch
+import numpy as np
+from learning import BatchGenerator
+import matplotlib.pyplot as plt
+
 
 
 class Trainer:
-    def __init__(self, name, size, out=1):
-        self.net = ParamsNet(out=out)
-        self.out = out
-        self.directory = name
-        self.batch = Batch(size, name)
-        self.adam = torch.optim.Adam(self.net.parameters(), lr=0.001)
-        self.device = torch.device('cuda:0')
-        self.log_f = open(f'./{self.directory}.csv', "w+")
-        self.loss_f = torch.nn.MSELoss
+    def __init__(self, model, model_path=None):
+        self.batch = BatchGenerator(64)
+        self.loss = []
+        self.accuracy = []
+        self.last = None
+        self.best = 1
+        self.device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
+        self.model = model(self.device).to(self.device)
+        if model_path is not None:
+            self.model.load_state_dict(torch.load(model_path))
+        self.criterion = torch.nn.MSELoss
+        self.adam = torch.optim.Adam(self.model.parameters(), lr=0.001)
 
-    def loss(self, pred, train):
-        L2_1 = ((pred[::, 0:1:1] - train[::, 0:1:1]) ** 2).mean()
-        L2_2 = ((pred[::, 1::1] - train[::, 1::1]) ** 2).mean()
-        L2 = L2_1 + L2_2
-        return L2.mean()
-
-    def loss_one(self, pred, train):
-        print(f'pred = {pred, train}')
-        return (pred - train)**2
-
-    def train(self, epoch):
+    def train(self, epoch, step_in_epoch, step_in_evaluate):
+        self.model.train()
         for i in range(epoch):
-            print(f'epoch = {i}')
-            self.adam.zero_grad()
-            data, train = self.batch.create_batch()
-            train = torch.from_numpy(train).to(self.device)
-            prediction = self.net.forward(data)
-            loss = self.loss(prediction, train)
-            loss.backward()
-            self.adam.step()
-            del data, train, prediction
-            if i % 5000 == 0 and i != 0:
-                self.net.eval()
-                self.evaluate(i)
-                self.save(i)
-                self.net.train()
-        self.log_f.close()
+            tmp = []
+            for j in range(step_in_epoch):
+                self.adam.zero_grad()
+                obs, target = self.batch.create_batch()
 
-    def save(self, name):
-        self.net.save(f'./{self.directory}/{name}')
+                bs, h, w, c = obs.shape
+                obs = obs.reshape(bs, c, h, w)
+                output = self.model.forward(obs)
+                target = torch.Tensor(target).to(self.device)
+                loss = self.criterion()(output, target)
+                loss.backward()
+                tmp.append(loss.item())
+                self.adam.step()
+                self.last = loss.item()
+            mean = np.array(tmp).mean()
+            self.loss.append(mean)
 
-    def load(self, path):
-        self.net.load(path)
+            if self.last <= self.best:
+                self.best = self.last
+                torch.save(self.model.state_dict(), 'best.pkl')
 
-    def evaluate(self, epoch_num):
-        print("EVALUATE")
-        data, train = self.batch.create_batch()
-        train = torch.from_numpy(train).to(self.device)
-        prediction = self.net.forward(data)
-        loss = self.loss(prediction, train)
-        print("print file")
-        print('{}, {}, {}\n'.format(epoch_num, loss, (1 - loss / 10) * 100))
-        self.log_f.write('{}, {}, {}\n'.format(epoch_num, loss, (1 - loss / 10) * 100))
+            self.evaluate(step_in_evaluate)
+        fig, ax = plt.subplots(1)
+        x = np.arange(0, epoch, 1)
+        ax.plot(x, self.loss, label='loss')
+        plt.legend()
+        plt.xlabel('epoch')
+        plt.ylabel('loss')
+        plt.title("Train loss")
+        plt.savefig('train.png')
+        fig, ax = plt.subplots(1)
+        x = np.arange(0, epoch, 1)
 
-    def local_evaluate(self):
-        for _ in range(100):
-            data, train = self.batch.create_batch()
-            train = torch.from_numpy(train).to(self.device)
-            prediction = self.net.forward(data)
-            loss = self.loss(prediction, train)
-            print(f'pred = {prediction.item()}')
-            print(f'real = {train.item()}')
-            print(f'loss = {loss}')
+        ax.plot(x, self.accuracy, label='loss')
+        plt.xlabel('epoch')
+        plt.ylabel('loss')
+        plt.legend()
+        plt.title("Eval loss")
+        plt.savefig('eval.png')
+        plt.show()
 
+
+    def evaluate(self, eval_step):
+        self.model.eval()
+        loss = []
+        for _ in range(eval_step):
+            obs_batch, target = self.batch.create_batch()
+            for i in range(len(obs_batch)):
+                obs = obs_batch[i]
+                obs = np.array([obs])
+                bs, h, w, c = obs.shape
+                obs = obs.reshape(bs, c, h, w)
+                output = self.model.forward(obs)
+                current = target[i]
+                loss_d = self.criterion()(output, torch.Tensor(np.array([current])).to(self.device))
+                loss.append(loss_d.item())
+        self.accuracy.append(np.array(loss).mean())
+        self.model.train()
 
 if __name__ == "__main__":
-    train = Trainer('dist', 1)
-    train.load('./dist/950')
-    train.local_evaluate()
+    trainer = Trainer(ParamsNet)
+    trainer.train(100, 10, 10)

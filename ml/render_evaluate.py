@@ -1,5 +1,5 @@
 import torch
-from learning import ParamsNet
+from ml_model import ParallelNet, ParamsNet
 from pyglet.window import key
 import random
 import time
@@ -29,7 +29,9 @@ def warp(env):
 
 if __name__ == '__main__':
     env = Environment(12345).create_env(False, None, env_config, warp)
-    model = ParamsNet('cuda:0')
+    #model = ParamsNet('cuda:0')
+    model = ParallelNet('cuda:0')
+    #model.load_state_dict(torch.load('../learning/best.pkl'))
     model.load_state_dict(torch.load('best.pkl'))
     model.to('cuda:0')
     model.eval()
@@ -43,11 +45,12 @@ if __name__ == '__main__':
             obs = np.array([obs])
             bs, h, w, c = obs.shape
             obs = obs.reshape(bs, c, h, w)
-            val = model.forward(obs)
-
-            action = [val[0][0].item(), val[0][1].item()]
-            #action = [d.item(), phi.item()]
+            #val = model.forward(obs)
+            d, phi = model.forward(obs)
+            #action = [val[0][0].item(), val[0][1].item()]
+            action = [d.item(), phi.item()]
             print(action)
             obs, rew, done, info = env.step(action)
 
             env.render()
+

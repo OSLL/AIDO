@@ -42,7 +42,8 @@ class BatchGenerator:
                 obs_, rew, done, info = env.step([random.uniform(-1, 1), random.uniform(-1, 1)])
                 if info["successfully"]:
                     self.obs_batch.append(obs)
-                    self.d_batch.append([info['dist'], info['rad']])
+                    self.d_batch.append(info['dist'])
+                    self.phi_batch.append(info['rad'])
                     current_size += 1
                 obs = obs_
-        return np.array(self.obs_batch), np.array(self.d_batch)
+        return np.array(self.obs_batch), np.array(self.d_batch), np.array(self.phi_batch)
