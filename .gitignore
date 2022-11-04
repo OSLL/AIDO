@@ -1,0 +1,10 @@
+.idea
+venv
+__pycache__
+*.csv
+PPO_logs
+PPO_preTrained
+*phi*
+*.log
+*.png
+*.pkl
